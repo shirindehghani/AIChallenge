@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package ir.sharif.aic.hideandseek.api.grpc;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+
+/**
+  The service of the game
+ */
+
+service GameHandler {
+  rpc DeclareReadiness(DeclareReadinessCommand) returns (google.protobuf.Empty);
+  rpc Watch(WatchCommand) returns (stream GameView);
+  rpc Move(MoveCommand) returns (google.protobuf.Empty);
+  rpc SendMessage(ChatCommand) returns (google.protobuf.Empty);
+}
+
+/**
+  Game
+ */
+
+message Turn {
+  int32 turnNumber = 1;
+  TurnType turnType = 2;
+}
+
+enum Team {
+  FIRST = 0;
+  SECOND = 1;
+}
+
+enum TurnType {
+  THIEF_TURN = 0;
+  POLICE_TURN = 1;
+}
+
+enum AgentType {
+  THIEF = 0;
+  POLICE = 1;
+}
+
+enum GameStatus {
+  PENDING = 0;
+  ONGOING = 1;
+  FINISHED = 2;
+}
+
+enum GameResult {
+  UNKNOWN = 0;
+  FIRST_WINS = 1;
+  SECOND_WINS = 2;
+  TIE = 3;
+}
+
+message Agent {
+  int32 id = 1;
+  Team team = 2;
+  AgentType type = 3;
+  int32 node_id = 4;
+  bool is_dead = 5;
+}
+
+message Node {
+  int32 id = 1;
+}
+
+message Path {
+  int32 id = 1;
+  int32 first_node_id = 2;
+  int32 second_node_id = 3;
+  double price = 4;
+}
+
+message Graph {
+  repeated Path paths = 1;
+  repeated Node nodes = 2;
+}
+
+message IncomeSettings {
+  double policeIncomeEachTurn = 1;
+  double thievesIncomeEachTurn = 2;
+}
+
+message TurnSettings {
+  int32 maxTurns = 1;
+  repeated int32 visibleTurns = 2;
+}
+
+message ChatSettings {
+  int32 chatBoxMaxSize = 1;
+  double chatCostPerCharacter = 2;
+}
+
+message GameConfig {
+  Graph graph = 1;
+  IncomeSettings incomeSettings = 2;
+  TurnSettings turnSettings = 3;
+  ChatSettings chatSettings = 4;
+}
+
+/**
+  Readiness
+ */
+
+message DeclareReadinessCommand {
+  string token = 1;
+  int32 startNodeId = 2;
+}
+
+/**
+  Move
+ */
+
+message MoveCommand {
+  string token = 1;
+  int32 toNodeId = 2;
+}
+
+/**
+  Watch
+ */
+
+message WatchCommand {
+  string token = 1;
+}
+
+message GameView {
+  GameStatus status = 1;
+  GameResult result = 2;
+  Turn turn = 3;
+  GameConfig config = 4;
+  Agent viewer = 5;
+  double balance = 6;
+  repeated Agent visible_agents = 7;
+  repeated Chat chatBox = 8;
+}
+
+/**
+  Chat
+ */
+
+message ChatCommand {
+  string token = 1;
+  string text = 2;
+}
+
+message Chat {
+  string id = 1;
+  int32 fromAgentId = 2;
+  string text = 3;
+  google.protobuf.Timestamp timeStamp = 4;
+}
