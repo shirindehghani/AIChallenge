@@ -6,3 +6,4 @@ pyinstaller==5.2
 pyinstaller-hooks-contrib==2022.8
 PyYAML==6.0
 six==1.16.0
+pyinstaller==5.2
