@@ -6,6 +6,20 @@ from scipy.sparse import csr_matrix
 import random
 
 
+def get_available_nodes(view: GameView):
+    available_nodes = []
+
+    for path in view.config.graph.paths:
+        if path.price > view.balance:
+            continue
+        if view.viewer.node_id == path.first_node_id or view.viewer.node_id == path.second_node_id:
+            node = path.first_node_id if path.second_node_id == view.viewer.node_id else path.second_node_id
+            available_nodes.append(node)
+    available_nodes.append(view.viewer.node_id)
+
+    return available_nodes
+
+
 def get_graph_distances(view: GameView):
     nodes = [node.id for node in view.config.graph.nodes]
     graph = [len(nodes)*[0] for i in range(len(nodes))]
@@ -43,6 +57,28 @@ def get_thief_starting_node(view: GameView) -> int:
     return get_optimal_node_thief(view, available_nodes)
 
 
+def catch_if_you_can(view, available_nodes):
+    for agent in view.visible_agents:
+        if not agent.is_dead and agent.team != view.viewer.team and agent.agent_type != view.viewer.agent_type:
+            if agent.node_id in available_nodes:
+                return agent.node_id
+    return 0
+
+
+def get_available_nodes_density(view, available_nodes):
+    density = []
+
+    for node in available_nodes:
+        cnt = 0
+        for agent in view.visible_agents:
+            if not agent.is_dead and agent.team == view.viewer.team and agent.agent_type == view.viewer.agent_type:
+                if agent.node_id == node:
+                    cnt += 1
+        density.append(cnt)
+
+    return density
+
+
 class Phone:
     def __init__(self, client: GameClient):
         self.client = client
@@ -56,14 +92,7 @@ class AI:
         self.phone = phone
 
     def thief_move_ai(self, view: GameView) -> int:
-        available_nodes = []
-        for path in view.config.graph.paths:
-            if path.price > view.balance:
-                continue
-            if view.viewer.node_id == path.first_node_id or view.viewer.node_id == path.second_node_id:
-                node = path.first_node_id if path.second_node_id == view.viewer.node_id else path.second_node_id
-                available_nodes.append(node)
-        available_nodes.append(view.viewer.node_id)
+        available_nodes = get_available_nodes(view)
 
         return get_optimal_node_thief(view, available_nodes)
 
@@ -75,14 +104,16 @@ class AI:
         return 2
 
     def police_move_ai(self, view: GameView) -> int:
-        available_nodes = []
-        for path in view.config.graph.paths:
-            if path.price > view.balance:
-                continue
-            if view.viewer.node_id == path.first_node_id or view.viewer.node_id == path.second_node_id:
-                node = path.first_node_id if path.second_node_id == view.viewer.node_id else path.second_node_id
-                available_nodes.append(node)
-        return random.choice(available_nodes)
+        available_nodes = get_available_nodes(view)
+
+        thief_node = catch_if_you_can(view, available_nodes)
+        if thief_node:
+            return thief_node
+
+        density = get_available_nodes_density(view, available_nodes)
+        weights = [2**(max(density) - den) for den in density]
+
+        return random.choices(available_nodes, weights=weights)[0]
 
         # write your code here
         self.phone.send_message('00101001')
