@@ -44,17 +44,12 @@ def get_optimal_node_thief(view, available_nodes):
             if not agent.is_dead and agent.team != view.viewer.team and agent.agent_type != view.viewer.agent_type:
                 police_node = agent.node_id
                 closest_police = min(closest_police, get_distance(node, police_node, distances=d))
-        weights.append(closest_police * closest_police)
+        if closest_police == 0:
+            weights.append(0)
+        else:
+            weights.append(2 ** closest_police)
 
     return random.choices(available_nodes, weights=weights)[0]
-
-
-def get_thief_starting_node(view: GameView) -> int:
-    # write your code here
-    available_nodes = []
-    for i in range(2, len(view.config.graph.nodes)+1):
-        available_nodes.append(i)
-    return get_optimal_node_thief(view, available_nodes)
 
 
 def catch_if_you_can(view, available_nodes):
@@ -77,6 +72,14 @@ def get_available_nodes_density(view, available_nodes):
         density.append(cnt)
 
     return density
+
+
+def get_thief_starting_node(view: GameView) -> int:
+    # write your code here
+    available_nodes = []
+    for i in range(2, len(view.config.graph.nodes)+1):
+        available_nodes.append(i)
+    return get_optimal_node_thief(view, available_nodes)
 
 
 class Phone:
