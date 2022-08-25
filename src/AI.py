@@ -47,7 +47,7 @@ def get_optimal_node_thief(view, available_nodes):
         if closest_police == 0:
             weights.append(0)
         else:
-            weights.append(2 ** closest_police)
+            weights.append((2 ** closest_police)*100)
 
     return random.choices(available_nodes, weights=weights)[0]
 
