@@ -74,6 +74,20 @@ def get_available_nodes_density(view, available_nodes):
     return density
 
 
+def get_thieves_distances(view, available_nodes):
+    d = get_graph_distances(view)
+    distances = []
+    for node in available_nodes:
+        closest_thief = 1000
+        for agent in view.visible_agents:
+            if not agent.is_dead and agent.team != view.viewer.team and agent.agent_type != view.viewer.agent_type:
+                thief_node = agent.node_id
+                closest_thief = min(closest_thief, get_distance(node, thief_node, distances=d))
+        distances.append(closest_thief)
+
+    return distances
+
+
 def get_thief_starting_node(view: GameView) -> int:
     # write your code here
     available_nodes = []
@@ -114,7 +128,20 @@ class AI:
             return thief_node
 
         density = get_available_nodes_density(view, available_nodes)
-        weights = [2**(max(density) - den) for den in density]
+        thieves_dis = get_thieves_distances(view, available_nodes)
+
+        weights = []
+        for i in range(len(available_nodes)):
+            den = density[i]
+            dis = thieves_dis[i]
+            if min(thieves_dis) != 1000:
+                weights.append(
+                    2 ** (max(thieves_dis) - dis)
+                )
+            else:
+                weights.append(
+                    2 ** (max(density) - den)
+                )
 
         return random.choices(available_nodes, weights=weights)[0]
 
